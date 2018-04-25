@@ -22,6 +22,7 @@ class SparkBot(Flask):
     """An instance of a Cisco Spark Bot"""
 
     def __init__(self, spark_bot_name, spark_bot_token=None,
+                 spark_api_url=None,
                  spark_bot_email=None, spark_bot_url=None,
                  default_action="/help", debug=False):
         """
@@ -53,7 +54,10 @@ class SparkBot(Flask):
         self.default_action = default_action
 
         # Create Spark API Object for interacting with Spark
-        self.spark = CiscoSparkAPI(access_token=spark_bot_token)
+        if (spark_api_url):
+            self.spark = CiscoSparkAPI(access_token=spark_bot_token, base_url=spark_api_url)
+        else:
+            self.spark = CiscoSparkAPI(access_token=spark_bot_token)
 
         # A dictionary of commands this bot listens to
         # Each key in the dictionary is a command, with associated help
