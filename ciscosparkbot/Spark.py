@@ -30,6 +30,7 @@ class SparkBot(Flask):
 
         :param spark_bot_name: Friendly name for this Bot (webhook name)
         :param spark_bot_token: Spark Auth Token for Bot Account
+        :param spark_api_url: URL to the Spark/Webex API endpoint
         :param spark_bot_email: Spark Bot Email Address
         :param spark_bot_url: WebHook URL for this Bot
         :param default_action: What action to take if no command found.
@@ -62,16 +63,12 @@ class SparkBot(Flask):
         # A dictionary of commands this bot listens to
         # Each key in the dictionary is a command, with associated help
         # text and callback function
-        # By default supports 2 command, /echo and /help
-        self.commands = {"/echo": {
-                            "help": "Reply back with the same message sent.",
-                            "callback": self.send_echo
-                            },
-                         "/help": {
+        # By default supports 1 command, /help
+        self.commands = {"/help": {
                             "help": "Get help.",
                             "callback": self.send_help
                             }
-                         }
+                        }
 
         # Flask Application URLs
         # Basic Health Check for Flask Application
@@ -254,16 +251,19 @@ class SparkBot(Flask):
         # If no command found, send the default_action
         if command in [""] and self.default_action:
             # noinspection PyCallingNonCallable
-            reply = self.commands[self.default_action]["callback"](message)
+            reply, reply_format = self.commands[self.default_action]["callback"](message, self)
         elif command in self.commands.keys():
             # noinspection PyCallingNonCallable
-            reply = self.commands[command]["callback"](message)
+            reply, reply_format = self.commands[command]["callback"](message, self)
         else:
             pass
 
         # send_message_to_room(room_id, reply)
         if reply:
-            self.spark.messages.create(roomId=room_id, markdown=reply)
+            if reply_format == 'text':
+              self.spark.messages.create(roomId=room_id, text=reply)
+            else:
+              self.spark.messages.create(roomId=room_id, markdown=reply)
         return reply
 
     def add_command(self, command, help_message, callback):
@@ -296,7 +296,7 @@ class SparkBot(Flask):
         return message
 
     # *** Default Commands included in Bot
-    def send_help(self, post_data):
+    def send_help(post_data, self):
         """
         Construct a help message for users.
         :param post_data:
@@ -307,14 +307,4 @@ class SparkBot(Flask):
         for c in self.commands.items():
             if c[1]["help"][0] != "*":
                 message += "* **%s**: %s \n" % (c[0], c[1]["help"])
-        return message
-
-    def send_echo(self, post_data):
-        """
-        Sample command function that just echos back the sent message
-        :param post_data:
-        :return:
-        """
-        # Get sent message
-        message = self.extract_message("/echo", post_data.text)
         return message

@@ -1,3 +1,61 @@
+# webex-bot-python
+This is a fork of the [ciscosparkbot project](https://github.com/imapex/ciscosparkbot), which provided an example of how to create a (then) Cisco Spark bot using the ciscosparkapi sdk.   This fork is designed as a companion to the [webex-api-emulator](https://github.com/webex/webex-api-emulator) to provide an example of a python based bot that regression tests could be created for.
+
+Please see the [bot-test-framework-example](https://github.com/jpjpjp/bot-test-framework-example) project to see a full example of how to create and run a regression test against this bot.   
+
+## Coding steps to make a ciscosparkapi based bot work with the emulator
+It must be possible to configure the bot to send Webex API requests to the emulator rather than the real Webex API endpoint.  To accomplish this we made to changes to the original project.
+
+In the [main bot code](webex_bot.py), we check to see if the environment variable SPARK_API_URL is set.  If so, we pass it into the contructor for the SparkBot
+
+  ```
+  if os.getenv("SPARK_API_URL"):
+      bot = SparkBot(bot_app_name, spark_bot_token=spark_token,
+                    spark_api_url=os.getenv("SPARK_API_URL"),
+                    spark_bot_url=bot_url, spark_bot_email=bot_email, debug=True)
+  else:
+      bot = SparkBot(bot_app_name, spark_bot_token=spark_token,
+                    spark_bot_url=bot_url, spark_bot_email=bot_email, debug=True)
+  ```
+
+Similarly, in the [ciscosparkbot implementation](ciscosparkbot/Spark.py) we pass this on to the CiscoSparkAPI sdk constructor if set:
+
+  ```
+        if (spark_api_url):
+            self.spark = CiscoSparkAPI(access_token=spark_bot_token, base_url=spark_api_url)
+        else:
+            self.spark = CiscoSparkAPI(access_token=spark_bot_token)
+  ```
+
+## Running the bot in emulator mode
+
+First setup your virtualenv: 
+```
+virtualenv venv
+source venv/bin/activate
+pip install ciscosparkbot
+```
+
+To run this bot so that it will work in conjunction with the bot-test-framework-example](https://github.com/jpjpjp/bot-test-framework-example), ensure that the webex-api-emulator is running as described there.
+
+This sample reads its configuration from the environment, ie:
+  ```
+  # Retrieve required details from environment variables
+  bot_email = os.getenv("SPARK_BOT_EMAIL")
+  spark_token = os.getenv("SPARK_BOT_TOKEN")
+  bot_url = os.getenv("SPARK_BOT_URL")
+  bot_app_name = os.getenv("SPARK_BOT_APP_NAME")
+  ```
+
+To set these so they work with the webex-api-emulator as follows: 
+   ```
+   SPARK_BOT_EMAIL="bot@sparkbot.io" SPARK_BOT_TOKEN="ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210" SPARK_BOT_URL="http://localhost:7000" SPARK_BOT_APP_NAME="webex-bot-python" SPARK_API_URL="http://localhost:3210/" python webex_bot.py
+  ```
+
+Once the bot is up and running you can proceed with the step-by-step instructions in the bot-test-framework-example README.
+
+What follows is the readme from the original project.
+
 # ciscosparkbot
 
 [![Build Status](https://travis-ci.org/imapex/ciscosparkbot.svg?branch=master)](https://travis-ci.org/imapex/ciscosparkbot)
